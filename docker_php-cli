@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+IFS="=" read _ PROJECT_NAME <<< $(grep "COMPOSE_PROJECT_NAME" .env | xargs)
+IFS="=" read _ USER_ID <<< $(grep "USER_ID" .env | xargs)
+IFS="=" read _ USER_GROUP_ID <<< $(grep "USER_GROUP_ID" .env | xargs)
+IFS="=" read _ XDEBUG_SERVER_NAME <<< $(grep "XDEBUG_SERVER_NAME" .env | xargs)
+IFS="=" read _ XDEBUG_SESSION <<< $(grep "XDEBUG_CLI_SESSION_ENABLED" .env | xargs)
+
+MACHINE_IP=$(docker network inspect -f '{{ ( index .IPAM.Config 0).Gateway }}' "${PROJECT_NAME}"_backend)
+NO_XDEBUG=0
+ARGS="--rm --user ${USER_ID}:${USER_GROUP_ID} --network ${PROJECT_NAME}_backend -v $PWD/docker/php-cli/bash:/bash -v $PWD:/var/www -w /var/www"
+CMD=""
+
+while [[ $# -gt 0 ]]; do
+    key="$1"
+
+    case $key in
+        --no-xdebug)
+            NO_XDEBUG=1
+            shift
+            ;;
+        *)
+            CMD="${CMD} ${key}"
+            shift
+            ;;
+    esac
+done
+
+case $(tty) in
+    ("not a tty") USE_TTY='';;
+              (*) USE_TTY='-it';;
+esac
+
+if [ "${XDEBUG_SESSION}" -eq 1 -a "${NO_XDEBUG}" -eq 0 ]; then
+    ARGS="${ARGS} -e PHP_IDE_CONFIG=serverName=${XDEBUG_SERVER_NAME} -e XDEBUG_CONFIG=client_host=${MACHINE_IP} -e XDEBUG_SESSION=${XDEBUG_SESSION}"
+fi
+
+ARGS="${ARGS} ${PROJECT_NAME}-php-cli"
+
+
+docker run ${USE_TTY} ${ARGS} ${CMD}
