@@ -17,13 +17,13 @@ return [
             ],
             [
                 'verb' => 'POST',
-                'pattern' => 'apples/{id}/eat',
+                'pattern' => 'apples/<id>/eat',
                 'route' => 'apple/eat',
             ],
             [
                 'verb' => 'POST',
-                'pattern' => 'apples/{id}/fall',
-                'route' => 'apple/fall-to-ground',
+                'pattern' => 'apples/<id>/drop',
+                'route' => 'apple/drop',
             ],
         ],
     ],

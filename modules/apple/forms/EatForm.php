@@ -14,8 +14,8 @@ use yii\validators\StringValidator;
 
 class EatForm extends Model
 {
-    public mixed $id;
-    public mixed $healthCount;
+    public mixed $id = null;
+    public mixed $healthCount = null;
 
     public function rules(): array
     {
@@ -25,25 +25,25 @@ class EatForm extends Model
                 RequiredValidator::class
             ],
             [
-                'id',
+                ['id'],
                 StringValidator::class,
                 'min' => 36,
                 'max' => 36,
             ],
             [
-                'id',
+                ['id'],
                 ExistValidator::class,
-                AppleProjection::class,
+                'targetClass' => AppleProjection::class,
             ],
             [
-                'healthCount',
+                ['healthCount'],
                 NumberValidator::class,
                 'integerOnly' => true,
                 'min' => 1,
                 'max' => 100,
             ],
             [
-                'healthCount',
+                ['healthCount'],
                 FilterValidator::class,
                 'filter' => fn(mixed $value) => $value ? (int)$value : null,
             ]

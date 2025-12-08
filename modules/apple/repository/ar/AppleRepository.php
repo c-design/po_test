@@ -65,9 +65,13 @@ final readonly class AppleRepository implements IAppleRepository
     public function update(Apple $apple): void
     {
         $p = AppleProjection::fromEntity($apple);
-
         try {
-            $result = $p->update();
+            $result = AppleProjection::getDb()->createCommand()->update(
+                AppleProjection::tableName(),
+                $p->toArray(),
+                ['id' => $p->id],
+            )->execute();
+
         } catch (\Throwable $ex) {
             throw new DbException($ex->getMessage(), $ex->getCode(), $ex);
         }

@@ -6,6 +6,7 @@ namespace apple\entity;
 
 use apple\enum\AppleState;
 use apple\exception\WrongAppleStateException;
+use DateTimeInterface;
 
 final class Apple
 {
@@ -15,6 +16,7 @@ final class Apple
     private AppleState $state;
     private ?\DateTimeInterface $fellAt = null;
     private ?\DateTimeInterface $deadAt = null;
+    private ?\DateTimeInterface $eatenAt = null;
 
     public function __construct(
         private readonly string $id,
@@ -52,18 +54,34 @@ final class Apple
         return $this;
     }
 
-    public function eat(int $duration): self {
+    public function eat(int $duration, \DateTimeInterface $currentTime): self {
         if(AppleState::AT_GROUND !== $this->state) {
             throw new WrongAppleStateException("Нельзя есть яблоко, если оно сгнило или ещё на дереве");
         }
 
         $healthAfterEat =  $this->health - $duration;
         if($healthAfterEat < 0){
-            throw new \InvalidArgumentException(sprintf("Нельзя съесть больше %d", $healthAfterEat));
+            throw new \InvalidArgumentException(sprintf("Нельзя съесть больше %d", $this->health));
         }
 
         $this->health -= $duration;
+        $this->eatenAt = $currentTime;
 
+        if($healthAfterEat == 0){
+            $this->dead($currentTime);
+        }
+
+        return $this;
+    }
+
+    public function eatenAt(): ?DateTimeInterface
+    {
+        return $this->eatenAt;
+    }
+
+    public function setEatenAt(\DateTimeImmutable $val): self
+    {
+        $this->eatenAt = $val;
         return $this;
     }
 
@@ -134,5 +152,10 @@ final class Apple
         }
 
         $this->state = $newState;
+    }
+
+    public function healthAsDecimalString(): string
+    {
+        return sprintf('%.02f', $this->health() / 100);
     }
 }

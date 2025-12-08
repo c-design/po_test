@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace apple\service;
 
+use apple\entity\Apple;
 use apple\factory\AppleFactory;
 use common\components\Clock\Clock;
-use apple\entity\Apple;
 use apple\repository\AppleRepository;
 
 final readonly class AppleManager
@@ -14,6 +14,7 @@ final readonly class AppleManager
     public function __construct(
         private AppleRepository $repository,
         private AppleFactory $factory,
+        private AppleCacheService $appleCacheService,
         private Clock $clock,
     ) {
     }
@@ -26,6 +27,7 @@ final readonly class AppleManager
         }
 
         $this->repository->batchAdd($apples);
+        $this->appleCacheService->invalidateList();
 
         return $apples;
     }
@@ -36,13 +38,17 @@ final readonly class AppleManager
         $apple->fallToGround($this->clock->now());
 
         $this->repository->update($apple);
+        $this->appleCacheService->invalidateList();
     }
 
-    public function eatById(string $id, int $health): void
+    public function eatById(string $id, int $health): Apple
     {
         $apple = $this->repository->get($id);
-        $apple->eat($health);
+        $apple->eat($health, $this->clock->now());
 
         $this->repository->update($apple);
+        $this->appleCacheService->invalidateList();
+
+        return $apple;
     }
 }

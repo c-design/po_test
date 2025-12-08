@@ -11,6 +11,7 @@ use apple\query\FindAllByFilter;
 use Generator;
 use yii\bootstrap5\Html;
 use yii\data\Pagination;
+use yii\helpers\ArrayHelper;
 
 final class ListViewModel
 {
@@ -38,7 +39,7 @@ final class ListViewModel
 
     public function getPagination(): Pagination
     {
-        if(null !== $this->pagination) {
+        if (null !== $this->pagination) {
             return $this->pagination;
         }
 
@@ -57,7 +58,7 @@ final class ListViewModel
 
     public function getHealth(Apple $apple): string
     {
-        return sprintf('%.02f', $apple->health() / 100);
+        return $apple->healthAsDecimalString();
     }
 
     public function getStateTitle(Apple $apple): string
@@ -65,14 +66,31 @@ final class ListViewModel
         return $apple->state()->title();
     }
 
-    public function getAppleActionBtns(Apple $apple): string
+    public function getAppleActionButtons(Apple $apple): string
     {
         $out = '';
-        if($apple->isFallen()){
-            $out.= Html::button('<i class="bi bi-fork-knife"></i>', ['class' => 'btn btn-sm btn-success', 'title' => 'съесть']);
+        if ($apple->isFallen()) {
+            $out .= Html::button(
+                '<i class="bi bi-fork-knife"></i>',
+                [
+                    'class' => 'btn btn-sm btn-success eat-it',
+                    'data-id' => $apple->id(),
+                    'title' => 'съесть',
+                    'data-bs-toggle' => "modal",
+                    'data-bs-target' => "#eatApplesModal",
+                ]
+            );
         }
-        if($apple->isAtTree()){
-            $out.= Html::button('<i class="bi bi-sm bi-arrow-down"></i>', ['class' => 'btn btn-sm btn-success', 'title' => 'уронить']);
+
+        if ($apple->isAtTree()) {
+            $out .= Html::button(
+                '<i class="bi bi-sm bi-arrow-down"></i>',
+                [
+                    'class' => 'btn btn-sm btn-success drop-it',
+                    'data-id' => $apple->id(),
+                    'title' => 'уронить'
+                ]
+            );
         }
 
         return $out;
@@ -83,6 +101,15 @@ final class ListViewModel
         return $this->listForm->page;
     }
 
+    public function calculateListKey(int $key): int
+    {
+        if($this->listForm->page === 1){
+            return ++$key;
+        }
+
+        return (($this->listForm->page - 1) * $this->listForm->limit) + ++$key;
+    }
+
     public function getTotalCount(): int
     {
         return $this->totalCount;
@@ -91,5 +118,14 @@ final class ListViewModel
     public function getState(): ?string
     {
         return $this->listForm->state;
+    }
+
+    public function getAdditionalInfo(Apple $apple) : array
+    {
+        return array_diff([
+            'упало на землю' => $apple->fellAt()?->format('d.m.Y H:i:s'),
+            'последний укус' => $apple->eatenAt()?->format('d.m.Y H:i:s'),
+            'сгнило' => $apple->deadAt()?->format('d.m.Y H:i:s'),
+        ], [null]);
     }
 }

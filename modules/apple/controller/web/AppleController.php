@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace apple\controller\web;
 
+use apple\controller\web\dto\AppleDto;
 use apple\exception\AppleNotFoundException;
 use apple\forms\EatForm;
 use apple\forms\ListForm;
-use apple\query\cached\FindAllByFilter as FindAllByFilterCached;
 use apple\query\dto\ListFilterData;
 use apple\query\FindAllByFilter;
 use apple\service\AppleManager;
@@ -15,7 +15,6 @@ use apple\viewModel\ListViewModel;
 use Throwable;
 use Yii;
 use yii\web\Response;
-use yii\caching\TagDependency;
 use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\Request;
@@ -39,7 +38,7 @@ final class AppleController extends Controller
                 'class' => AccessControl::class,
                 'rules' => [
                     [
-                        'actions' => ['list', 'generate', 'eat', 'fallToGround'],
+                        'actions' => ['list', 'generate', 'eat', 'drop'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -53,7 +52,6 @@ final class AppleController extends Controller
         try {
             $randNum = random_int(50, 500);
             $this->manager->randomSeed($randNum);
-            TagDependency::invalidate(Yii::$app->cache, [FindAllByFilterCached::CACHE_TAG]);
             Yii::$app->session->setFlash('success', sprintf('Успешно сгенерировано %d записей', $randNum));
         } catch (Throwable $exception) {
             Yii::$app->session->setFlash('error', $exception->getMessage());
@@ -79,10 +77,14 @@ final class AppleController extends Controller
             $this->findAllByFilterQuery->total($filterDto),
         );
 
+        if($this->request->isAjax) {
+            return $this->renderPartial('list', ['viewModel' => $viewModel]);
+        }
+
         return $this->render('list', ['viewModel' => $viewModel]);
     }
 
-    public function actionEat(string $id): Response
+    public function actionDrop(string $id): Response
     {
         $resp = $this->response;
         try {
@@ -95,7 +97,7 @@ final class AppleController extends Controller
         return $this->response;
     }
 
-    public function actionFallToGround(string $id): Response
+    public function actionEat(string $id): Response
     {
         $resp = $this->response;
         $resp->format = Response::FORMAT_JSON;
@@ -114,10 +116,14 @@ final class AppleController extends Controller
         }
 
         try {
-            $this->manager->eatById($id, $form->healthCount);
-            $resp->setStatusCode(204);
+            $apple = $this->manager->eatById($id, $form->healthCount);
+            $resp->data = AppleDto::fromEntity($apple);
+            $resp->setStatusCode(200);
         } catch (AppleNotFoundException) {
             $resp->setStatusCode(404);
+        } catch (\DomainException|\InvalidArgumentException $ex) {
+            $resp->setStatusCode(422);
+            $resp->data = ['errors' => ['global' => [$ex->getMessage()]]];
         }
 
         return $this->response;

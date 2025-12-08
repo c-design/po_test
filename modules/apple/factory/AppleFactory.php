@@ -43,13 +43,13 @@ final readonly class AppleFactory
         switch ($state) {
             case AppleState::AT_GROUND:
                 $e->fallToGround($dt->add(new DateInterval(\sprintf('PT%dH', \rand(1, 6)))));
-                $e->eat(\rand(1, 99));
+                $e->eat(\rand(1, 99), $e->fellAt()->add(new DateInterval(\sprintf('PT%dS', \rand(10, 60)))));
                 break;
             case AppleState::DEAD:
                 $e->fallToGround($dt->add(new DateInterval(\sprintf('PT%dH', \rand(1, 6)))));
 
                 if(\random_int(0, 1) === 1) {
-                    $e->eat(rand(1, 99));
+                    $e->eat(rand(1, 99), $e->fellAt()->add(new DateInterval(\sprintf('PT%dS', \rand(10, 60)))));
                 }
 
                 $e->dead($e->fellAt()->add(new DateInterval(\sprintf('PT%dS', Apple::MAX_LIFETIME))));

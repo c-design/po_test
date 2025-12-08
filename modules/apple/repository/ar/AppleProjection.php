@@ -17,6 +17,7 @@ use yii\db\ActiveRecord;
  * @property string $created_at
  * @property null|string $fell_at
  * @property null|string $dead_at
+ * @property null|string $eaten_at
  */
 class AppleProjection extends ActiveRecord
 {
@@ -31,10 +32,11 @@ class AppleProjection extends ActiveRecord
         $p->id = $e->id();
         $p->color = $e->color();
         $p->health = $e->health();
-        $p->state = $e->state();
+        $p->state = $e->state()->value;
         $p->created_at = $e->createdAt()->format('Y-m-d H:i:s');
         $p->fell_at = $e->fellAt()?->format('Y-m-d H:i:s');
         $p->dead_at = $e->deadAt()?->format('Y-m-d H:i:s');
+        $p->eaten_at = $e->eatenAt()?->format('Y-m-d H:i:s');
 
         return $p;
     }
@@ -49,6 +51,7 @@ class AppleProjection extends ActiveRecord
 
         switch ($this->state) {
             case AppleState::DEAD->value:
+                $e->fallToGround(new DateTimeImmutable($this->fell_at));
                 $e->dead(new DateTimeImmutable($this->dead_at));
                 break;
             case AppleState::AT_GROUND->value:
@@ -62,6 +65,10 @@ class AppleProjection extends ActiveRecord
 
         $e->setHealth($this->health);
         $e->setColor($this->color);
+
+        if(null !== $this->eaten_at){
+            $e->setEatenAt(new DateTimeImmutable($this->eaten_at));
+        }
 
         return $e;
     }

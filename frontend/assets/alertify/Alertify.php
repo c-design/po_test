@@ -1,29 +1,29 @@
 <?php
 
-namespace frontend\assets;
+namespace frontend\assets\alertify;
 
-use frontend\assets\alertify\Alertify;
 use yii\bootstrap5\BootstrapAsset;
 use yii\bootstrap5\BootstrapIconAsset;
 use yii\web\AssetBundle;
-use yii\web\YiiAsset;
 
 /**
  * Main frontend application asset bundle.
  */
-class AppAsset extends AssetBundle
+class Alertify extends AssetBundle
 {
-    public $basePath = '@webroot';
-    public $baseUrl = '@web';
+    public $sourcePath = __DIR__;
+
     public $css = [
-        'css/site.css',
+        'css/alertify.css',
+        'css/themes/bootstrap.css',
     ];
+
     public $js = [
-        'js/site.js',
+        'js/alertify.min.js',
+        'js/init.js',
     ];
+
     public $depends = [
-        YiiAsset::class,
-        Alertify::class,
         BootstrapAsset::class,
         BootstrapIconAsset::class,
     ];
